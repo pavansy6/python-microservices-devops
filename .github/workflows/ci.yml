@@ -42,3 +42,29 @@ jobs:
         context: ./logger
         push: true
         tags: ${{ secrets.DOCKERHUB_USERNAME }}/python-logger:latest
+  fail_and_notify:
+    runs-on: ubuntu-latest
+    needs: build_and_push
+    steps:
+    - name: Force failure step
+      run: |
+        echo "This step will fail intentionally"
+        exit 1
+
+    - name: Send email on failure
+      if: failure()   # Only runs if the previous step failed
+      uses: dawidd6/action-send-mail@v3
+      with:
+        server_address: smtp.gmail.com
+        server_port: 465
+        username: ${{ secrets.EMAIL_USERNAME }}
+        password: ${{ secrets.EMAIL_PASSWORD }}
+        subject: "CI/CD Pipeline Failed 🚨"
+        body: |
+          The workflow failed in the job **fail_and_notify**.
+          Repo: ${{ github.repository }}
+          Commit: ${{ github.sha }}
+          Actor: ${{ github.actor }}
+          Check the logs here: ${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}
+        to: "pawan.yadav@sdbi.in"
+        from: "GitHub Actions <${{ secrets.EMAIL_USERNAME }}>"
